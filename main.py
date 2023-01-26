@@ -14,7 +14,7 @@ def load_predicions(path: str):
             box[2] = box[0] + box[2]
             box[3] = box[1] + box[3]
             boxes.append([int(row[0])] + box)
-    return boxes
+    return np.array(boxes)
 
 def load_predictions2(path: str):
     data = list(csv.reader(open(path)))
@@ -25,7 +25,7 @@ def load_predictions2(path: str):
         box[4] = box[2] + box[4]
         boxes.append(box)
 
-    return boxes
+    return np.array(boxes)
 
 def load_labels2(path: str):
     data = list(csv.reader(open(path), delimiter=';'))
@@ -37,14 +37,14 @@ def load_labels2(path: str):
             box[3] = box[1] + box[3]
             box = [int(row[0])] + box
             boxes.append(box)
-    return boxes
+    return np.array(boxes)
 
 # frame_id, x1, y1, x2, y2
 def load_labels(path: str):
     data = list(csv.reader(open(path)))
     data = [[int(val) for val in row] for row in data[1:]]
 
-    return data
+    return np.array(data)
 
 def iou_multiple_boxes(boxes_preds, boxes_labels):
     box1_x1 = boxes_preds[..., 0:1]
@@ -138,19 +138,24 @@ def mean_average_precision(
 
     return np.trapz(precisions, recalls)
 
+from mAPcustom import mAP
+
 def main():
-    # preds = load_predicions("./predictions2/Dron T02.61920488.20220117151609.csv")
-    # labels = load_labels("./labels2/Dron T02.61920488.20220117151609.avi.csv")
+    preds = load_predicions("./predictions2/Dron T02.61920488.20220117151609.csv")
+    labels = load_labels("./labels2/Dron T02.61920488.20220117151609.avi.csv")
 
-    preds = load_predictions2("./predictions/coordinates_1.csv")
-    labels = load_labels2("./labels/connected_1.csv")
+    # preds = load_predictions2("./predictions/coordinates_1.csv")
+    # labels = load_labels2("./labels/connected_1.csv")
 
-    mAPs = []
-    for thresh in np.arange(0.5, 0.95, 0.05):
-        mAPs.append(mean_average_precision(preds, labels, thresh))
+    mAP(preds, labels)
 
-    print(mAPs)
-    print(sum(mAPs) / len(mAPs))
+    # mAPs = []
+    # for thresh in np.arange(0.5, 0.95, 0.05):
+    #     mAPs.append(mean_average_precision(preds, labels, thresh))
+
+    # print(mAPs)
+    # print(sum(mAPs) / len(mAPs))
+    
 
     # print(mean_average_precision(preds, labels, 0.5))
 
