@@ -5,8 +5,6 @@ import matplotlib
 from matplotlib import pyplot as plt
 from scipy.integrate import trapezoid 
 import pandas as pd
-import tensorflow as tf
-
 
 
 class bbox():
@@ -94,12 +92,12 @@ def pair_bbox(real_drones,detected_drones):
 
 def main():
     thresholds = np.arange(start=0.0, stop=1.1, step=0.1)
-    for camera in range(1, 9):  # Dla każdej z 8 kamer
+    for camera in range(1, 2):  # Dla każdej z 8 kamer
         precisions = []
         recalls = []
 
-        true_positions =  pd.read_csv(".\\Dataset\\{}\\Data\\connected_{}.csv".format(LAB,camera), delimiter=";", header=None)
-        detected_positions = pd.read_csv(".\\Dataset\\{}\\Exps\\{}\\coordinates.csv".format(LAB,camera),delimiter=',')
+        true_positions =  pd.read_csv("./labels/connected_1.csv", delimiter=";", header=None)
+        detected_positions = pd.read_csv("./predictions/coordinates_1.csv",delimiter=',')
         
         detected_bbox = load_predicted_data(detected_positions)
         true_bbox = load_true_data(true_positions)
@@ -132,7 +130,7 @@ def main():
         reinterpreted_precision = [np.max(precisions[i:]) for i in range(len(precisions))]
         if np.max(recalls) - np.min(recalls):
             Ap = np.average(precisions,weights=recalls)
-            Ap = trapezoid(reinterpreted_precision,recalls)/(np.max(recalls) - np.min(recalls))
+            Ap = trapezoid(reinterpreted_precision,recalls)
             # Ap = np.average(precisions)
             print("Camera: {}, Avarage precision: {}".format(camera,Ap))
 
