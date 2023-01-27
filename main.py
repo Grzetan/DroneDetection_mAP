@@ -138,7 +138,7 @@ def mean_average_precision(
 
     return np.trapz(precisions, recalls)
 
-from mAPcustom import mAP
+from mAPcustom import AP
 
 def main():
     preds = load_predicions("./predictions2/Dron T02.61920488.20220117151609.csv")
@@ -147,7 +147,7 @@ def main():
     # preds = load_predictions2("./predictions/coordinates_1.csv")
     # labels = load_labels2("./labels/connected_1.csv")
 
-    mAP(preds, labels)
+    AP(preds, labels, iou_thresh=0.1, plot=True)
 
     # mAPs = []
     # for thresh in np.arange(0.5, 0.95, 0.05):

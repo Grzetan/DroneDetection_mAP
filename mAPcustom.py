@@ -1,4 +1,8 @@
 import numpy as np
+from collections import Counter
+import matplotlib.pyplot as plt
+from scipy.integrate import simpson
+
 import sys
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -27,6 +31,11 @@ def classifyDetected(predictions: np.ndarray, labels: np.ndarray, iou_thresh):
     @return Returns tuple of two numpy arrays, first one is binary mask of true positives and second one is binary mask for false positives
     """
 
+    # Dict which has information about how many true bboxes are on each frame
+    amount_bboxes = Counter([gt[0] for gt in labels])
+    for key, val in amount_bboxes.items():
+        amount_bboxes[key] = np.zeros(val)
+
     TP = np.zeros((len(predictions)), dtype=np.uint8)
     FP = np.zeros((len(predictions)), dtype=np.uint8)
 
@@ -49,25 +58,68 @@ def classifyDetected(predictions: np.ndarray, labels: np.ndarray, iou_thresh):
                 best_gt_index = j
 
         if best_iou > iou_thresh:
-            TP[i] = 1
+            if amount_bboxes[pred[0]][best_gt_index] == 0:
+                TP[i] = 1
+                amount_bboxes[pred[0]][best_gt_index] = 1
+            else:
+                FP[i] = 1
         else:
             FP[i] = 1
 
     return TP, FP
 
-def mAP(predictions, labels, iou_thresh=0.5):
-    """! Calculates mean average precision for given IOU threshold.
+def AP(predictions: np.ndarray, labels: np.ndarray, iou_thresh: int=0.5, plot: bool=False):
+    """! Calculates average precision for given IOU threshold.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
     @param iou_thresh Float in range (0, 1> that decides how much detected bbox should intersect with ground truth bbox to be called valid.
-    @return Returns mean average precision score for given IOU thresh: float <0, 1>
+    @param plot If true precision vs recall graph is shown which can visualize area under curve
+    @return Returns average precision score for given IOU thresh: float <0, 1>
     """
 
-    # Only around 1/3 of predicted boxes are TP?????
+    # Only around 541 of 24900 all predicted boxes are TP?????
 
     TP, FP = classifyDetected(predictions, labels, iou_thresh)
 
-    print(len(TP))
-    print(len(FP))
-    print(sum(TP))
-    print(sum(FP))
+    # Calculate cumulative sum of TP and FP to than use them to create plot of precision vs recall 
+    TPcumsum = np.cumsum(TP)
+    FPcumsum = np.cumsum(FP)
+    recalls = TPcumsum / len(labels)
+    precisions = TPcumsum / (TPcumsum + FPcumsum)
+
+    # Add point (0,1) to the beggining and (1, 0) to the end to ensure that area under curve is calculated properly
+    recalls = np.insert(recalls, 0, 0, axis=0)
+    precisions = np.insert(precisions, 0, 1, axis=0)
+    recalls = np.append(recalls, 1)
+    precisions = np.append(precisions, 0)
+
+    # Smooth precision curve
+    for i, p in enumerate(precisions[:-1]):
+        precisions[i] = max(precisions[i+1:])
+
+    if plot:
+        plt.plot(recalls, precisions)
+        plt.xlabel('recall')
+        plt.ylabel('precision')
+
+    # Use 11-points interpolated method
+    dx = np.linspace(0, 1, 11)
+    points = []
+    for val in dx:
+        idx = (np.abs(recalls - val)).argmin()
+        points.append(precisions[idx])
+        if plot:
+            plt.plot(val, precisions[idx], 'ro')
+
+    # Calculate area under precision-recall curve
+    ap2 = np.trapz(precisions, recalls) # Numpy trapz function
+    ap3 = simpson(precisions, recalls) # Scipy simpson function
+    ap = sum(points) / len(points) # 11-points interpolated method
+
+    if plot: 
+        plt.title(f"Area under curve: {ap}")
+        plt.show()
+
+    print(ap, ap2, ap3)
+
+    return ap
