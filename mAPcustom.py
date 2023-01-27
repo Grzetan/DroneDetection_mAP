@@ -3,10 +3,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from scipy.integrate import simpson
 
-import sys
-np.set_printoptions(threshold=sys.maxsize)
-
-def iou(pred, label):
+def iou(pred: np.ndarray, label: np.ndarray):
     """! Calculates intersection over union of two input boxes
     @param pred First box. Bbox format: [x1, y1, x2, y2]: ndarray
     @param label Second box. Bbox format: [x1, y1, x2, y2]: ndarray
@@ -68,7 +65,7 @@ def classifyDetected(predictions: np.ndarray, labels: np.ndarray, iou_thresh):
 
     return TP, FP
 
-def AP(predictions: np.ndarray, labels: np.ndarray, iou_thresh: int=0.5, plot: bool=False):
+def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: int=0.5, plot: bool=False):
     """! Calculates average precision for given IOU threshold.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
@@ -112,14 +109,31 @@ def AP(predictions: np.ndarray, labels: np.ndarray, iou_thresh: int=0.5, plot: b
             plt.plot(val, precisions[idx], 'ro')
 
     # Calculate area under precision-recall curve
-    ap2 = np.trapz(precisions, recalls) # Numpy trapz function
-    ap3 = simpson(precisions, recalls) # Scipy simpson function
+    # ap = np.trapz(precisions, recalls) # Numpy trapz function
+    # ap = simpson(precisions, recalls) # Scipy simpson function
     ap = sum(points) / len(points) # 11-points interpolated method
 
     if plot: 
         plt.title(f"Area under curve: {ap}")
+        plt.suptitle(f"Graph generated for IOU threshold = {iou_thresh}")
         plt.show()
 
-    print(ap, ap2, ap3)
-
     return ap
+
+def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float, iou_stop: float, iou_step: float, plot: bool=False):
+    """! Calculates mean average precision for every value in given IOU range.
+    @brief For iou_start=0.5, iou_stop=0.9, iou_step=0.1 these IOU thresholds will be checked: [0.5, 0.6, 0.7, 0.8, 0.9].
+    @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @param iou_start Starting IOU threshold.
+    @param iou_stop Ending IOU threshold.
+    @param iou_step Step of thresholds. Total number of checked thresholds depend on this number.
+    @param plot If true precision vs recall graph is shown which can visualize area under curve
+    @return Returns mean average precision score for given IOU range: float <0, 1>
+    """
+
+    APs = []
+    for thresh in np.arange(iou_start, iou_stop, iou_step):
+        APs.append(averagePrecision(predictions, labels, thresh, plot))
+
+    return sum(APs) / len(APs)
