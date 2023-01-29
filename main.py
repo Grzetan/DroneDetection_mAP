@@ -152,6 +152,4 @@ def main():
 
 main()
 
-# Srednia odleglosci srodkow bboxow dopasowanych, ilosc false negativow
-# Odleglosc srednia kwadratowa i bezwgledna 
-# output do csv
+# output do csv ???

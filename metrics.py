@@ -7,6 +7,7 @@ import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
 from scipy.integrate import simpson
+import math
 
 def iou(pred: np.ndarray, label: np.ndarray) -> np.ndarray:
     """! Calculates intersection over union of two input boxes
@@ -181,17 +182,24 @@ def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: 
                 matched_labels.append(gt_bboxes[best_gt_index][1:])
                 amount_bboxes[pred[0]][best_gt_index] = 1
 
-    matched_labels = np.array(matched_labels, dtype=np.uint32)
-    matched_preds = np.array(matched_preds, dtype=np.uint32)
+    matched_labels = np.array(matched_labels, dtype=np.int32)
+    matched_preds = np.array(matched_preds, dtype=np.int32)
 
     if len(matched_labels) != len(matched_preds):
         raise Exception("Cannot match labels with predictions correctly")
 
     # When we have matched pairs of label - prediction, calcualte distance between centers
+    dists = []
+    
     for i in range(len(matched_labels)):
-        pass
+        c1_x = matched_labels[i][0] + (matched_labels[i][2] - matched_labels[i][0])
+        c1_y = matched_labels[i][1] + (matched_labels[i][3] - matched_labels[i][1])
+        c2_x = matched_preds[i][0] + (matched_preds[i][2] - matched_preds[i][0])
+        c2_y = matched_preds[i][1] + (matched_preds[i][3] - matched_preds[i][1])
 
-    return 0
+        dists.append(math.sqrt((c1_x - c2_x)**2 + (c1_y - c2_y)**2))
+
+    return sum(dists) / len(dists)
 
 def metrics(predictions: np.ndarray, 
             labels: np.ndarray, 
@@ -223,4 +231,4 @@ def metrics(predictions: np.ndarray,
     # Get average distance between bbox centers
     dist = distBetweenCenters(predictions, labels, main_iou_thresh)
 
-    return {"mAP": mAP_score, "FN_count": FN_count, "center_dist": dist}
+    return {"mAP": mAP_score, "FN_count": FN_count, "mean_center_dist": dist}
