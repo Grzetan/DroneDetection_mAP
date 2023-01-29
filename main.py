@@ -138,7 +138,7 @@ def mean_average_precision(
 
     return np.trapz(precisions, recalls)
 
-from mAPcustom import mAP
+from metrics import metrics
 
 def main():
     # preds = load_predicions("./predictions2/Dron T02.61920488.20220117151609.csv")
@@ -147,6 +147,11 @@ def main():
     preds = load_predictions2("./predictions/coordinates_1.csv")
     labels = load_labels2("./labels/connected_1.csv")
 
-    mAP(preds, labels, iou_start=0.1, iou_stop=0.3, iou_step=0.1, plot=True)
+    score = metrics(preds, labels, mAP_start=0.3, mAP_stop=0.4, mAP_step=0.1, plot=False)
+    print(score)
 
 main()
+
+# Srednia odleglosci srodkow bboxow dopasowanych, ilosc false negativow
+# Odleglosc srednia kwadratowa i bezwgledna 
+# output do csv

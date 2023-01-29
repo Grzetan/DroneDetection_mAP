@@ -1,9 +1,14 @@
+##
+# @file
+# metrics file
+#
+
 import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
 from scipy.integrate import simpson
 
-def iou(pred: np.ndarray, label: np.ndarray):
+def iou(pred: np.ndarray, label: np.ndarray) -> np.ndarray:
     """! Calculates intersection over union of two input boxes
     @param pred First box. Bbox format: [x1, y1, x2, y2]: ndarray
     @param label Second box. Bbox format: [x1, y1, x2, y2]: ndarray
@@ -20,7 +25,7 @@ def iou(pred: np.ndarray, label: np.ndarray):
 
     return intersection / (box1_area + box2_area - intersection + 1e-6)
 
-def classifyDetected(predictions: np.ndarray, labels: np.ndarray, iou_thresh):
+def classifyDetected(predictions: np.ndarray, labels: np.ndarray, iou_thresh) -> tuple:
     """! Classifies detected bboxes to true positive or false positive.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
@@ -65,7 +70,7 @@ def classifyDetected(predictions: np.ndarray, labels: np.ndarray, iou_thresh):
 
     return TP, FP
 
-def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: int=0.5, plot: bool=False):
+def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: int=0.5, plot: bool=False) -> float:
     """! Calculates average precision for given IOU threshold.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
@@ -73,8 +78,6 @@ def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: in
     @param plot If true precision vs recall graph is shown which can visualize area under curve
     @return Returns average precision score for given IOU thresh: float <0, 1>
     """
-
-    # Only around 541 of 24900 all predicted boxes are TP?????
 
     TP, FP = classifyDetected(predictions, labels, iou_thresh)
 
@@ -110,7 +113,7 @@ def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: in
 
     # Calculate area under precision-recall curve
     # ap = np.trapz(precisions, recalls) # Numpy trapz function
-    # ap = simpson(precisions, recalls) # Scipy simpson function
+    # ap = simpson(precisions, recalls) # Scipy simpson function ???
     ap = sum(points) / len(points) # 11-points interpolated method
 
     if plot: 
@@ -120,7 +123,7 @@ def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: in
 
     return ap
 
-def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float, iou_stop: float, iou_step: float, plot: bool=False):
+def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float, iou_stop: float, iou_step: float, plot: bool=False) -> float:
     """! Calculates mean average precision for every value in given IOU range.
     @brief For iou_start=0.5, iou_stop=0.9, iou_step=0.1 these IOU thresholds will be checked: [0.5, 0.6, 0.7, 0.8, 0.9].
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
@@ -136,4 +139,45 @@ def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float, iou_stop:
     for thresh in np.arange(iou_start, iou_stop, iou_step):
         APs.append(averagePrecision(predictions, labels, thresh, plot))
 
-    return sum(APs) / len(APs)
+    return (sum(APs) / len(APs))
+
+def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: float) -> float:
+    """! Calculates mean distance between bboxe's centers.
+    @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @param iou_thresh Float in range (0, 1> that decides how much detected bbox should intersect with ground truth bbox to be called valid.
+    @return Returns mean distance between bboxe's centers
+    """
+    return 0
+
+def metrics(predictions: np.ndarray, 
+            labels: np.ndarray, 
+            mAP_start: float, 
+            mAP_stop: float, 
+            mAP_step: float, 
+            main_iou_thresh: float=0.5, 
+            plot: bool=False) -> dict:
+    """! Returns metrics for input data.
+    @brief Tuple with 3 values is returned, first value is mAP for given mAP thresholds, second value is count of false negatives for given iou thresh, 
+    last value is a mean distance between label bbox and closest prediction.
+    @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @param mAP_start Mean average precision starting IOU threshold.
+    @param mAP_stop Mean average precision ending IOU threshold.
+    @param mAP_step Step of thresholds. Total number of checked thresholds depend on this number.
+    @param main_iou_thresh IOU threshold which is used in counting FNs and calcualating distance between bboxe's centers
+    @param plot If true precision vs recall graph is shown which can visualize area under curve
+    @return Returns tuple of three: (mAP, FN_count, bbox_center_dist)
+    """
+
+    # Get mean average precision
+    mAP_score = mAP(predictions, labels, mAP_start, mAP_stop, mAP_step, plot)
+
+    # Count FN for given thresh
+    TP, FP = classifyDetected(predictions, labels, main_iou_thresh)
+    FN_count = len(labels) - sum(TP)
+
+    # Get average distance between bbox centers
+    dist = distBetweenCenters(predictions, labels, main_iou_thresh)
+
+    return {"mAP": mAP_score, "FN_count": FN_count, "center_dist": dist}
