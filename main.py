@@ -147,7 +147,7 @@ def main():
     preds = load_predictions2("./predictions/coordinates_1.csv")
     labels = load_labels2("./labels/connected_1.csv")
 
-    score = metrics(preds, labels, mAP_start=0.3, mAP_stop=0.4, mAP_step=0.1, plot=False)
+    score = metrics(preds, labels, mAP_start=0.3, mAP_stop=0.4, mAP_step=0.1, main_iou_thresh=0.2, plot=False)
     print(score)
 
 main()

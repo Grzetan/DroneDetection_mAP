@@ -94,7 +94,7 @@ def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: in
     precisions = np.append(precisions, 0)
 
     # Smooth precision curve
-    for i, p in enumerate(precisions[:-1]):
+    for i in range(len(precisions[:-1])):
         precisions[i] = max(precisions[i+1:])
 
     if plot:
@@ -148,6 +148,49 @@ def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: 
     @param iou_thresh Float in range (0, 1> that decides how much detected bbox should intersect with ground truth bbox to be called valid.
     @return Returns mean distance between bboxe's centers
     """
+
+    # First, pair label with predictions
+    amount_bboxes = Counter([gt[0] for gt in labels])
+    for key, val in amount_bboxes.items():
+        amount_bboxes[key] = np.zeros(val)
+
+    matched_preds = []
+    matched_labels = []
+
+    # Sort predictions by score
+    predictions = np.array(sorted(predictions, key=lambda x: x[5], reverse=True))
+
+    # For every prediction, find groud truth bbox with highest iou and check if it is greater than iou thresh
+    for pred in predictions:
+        # Get gt bboxes from the same frame
+        gt_bboxes = [gt for gt in labels if gt[0] == pred[0]]
+
+        best_iou = 0
+        best_gt_index = 0
+
+        for j, gt_box in enumerate(gt_bboxes):
+            iou_score = iou(pred[1:-1], gt_box[1:])
+
+            if iou_score > best_iou:
+                best_iou = iou_score
+                best_gt_index = j
+
+        if best_iou > iou_thresh:
+            if amount_bboxes[pred[0]][best_gt_index] == 0:
+                matched_preds.append(pred[1:-1])
+                matched_labels.append(gt_bboxes[best_gt_index][1:])
+                amount_bboxes[pred[0]][best_gt_index] = 1
+
+    matched_labels = np.array(matched_labels, dtype=np.uint32)
+    matched_preds = np.array(matched_preds, dtype=np.uint32)
+
+    if len(matched_labels) != len(matched_preds):
+        raise Exception("Cannot match labels with predictions correctly")
+
+    # When we have matched pairs of label - prediction, calcualte distance between centers
+    for i in range(len(matched_labels)):
+        pass
+
     return 0
 
 def metrics(predictions: np.ndarray, 
@@ -173,7 +216,7 @@ def metrics(predictions: np.ndarray,
     # Get mean average precision
     mAP_score = mAP(predictions, labels, mAP_start, mAP_stop, mAP_step, plot)
 
-    # Count FN for given thresh
+    # Count FN for given threshold
     TP, FP = classifyDetected(predictions, labels, main_iou_thresh)
     FN_count = len(labels) - sum(TP)
 
