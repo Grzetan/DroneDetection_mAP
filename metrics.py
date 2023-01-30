@@ -142,11 +142,12 @@ def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float, iou_stop:
 
     return (sum(APs) / len(APs))
 
-def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: float) -> float:
+def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: float, method: str = 'squared') -> float:
     """! Calculates mean distance between bboxe's centers.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
     @param iou_thresh Float in range (0, 1> that decides how much detected bbox should intersect with ground truth bbox to be called valid.
+    @param method Method of calculating distance, either 'squared' or 'normal'. Squared squares distances in euclidean distance before summing.S
     @return Returns mean distance between bboxe's centers
     """
 
@@ -199,7 +200,12 @@ def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: 
 
         dists.append(math.sqrt((c1_x - c2_x)**2 + (c1_y - c2_y)**2))
 
-    return sum(dists) / len(dists)
+    if method == 'normal':
+        return sum(dists) / len(dists)
+    elif method == 'squared':
+        return sum([i**2 for i in dists]) / len(dists)
+    else:
+        return 0
 
 def metrics(predictions: np.ndarray, 
             labels: np.ndarray, 

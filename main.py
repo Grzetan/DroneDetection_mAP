@@ -59,18 +59,7 @@ def load_labels3(path: str, shift: int):
             boxes.append(box)
     return np.array(boxes)
 
-
-
-def main():
-    # preds = load_predicions("./predictions2/Dron T02.61920488.20220117151609.csv")
-    # labels = load_labels("./labels2/Dron T02.61920488.20220117151609.avi.csv")
-
-    # preds = load_predictions2("./predictions/coordinates_1.csv")
-    # labels = load_labels2("./labels/connected_1.csv")
-
-    labels = load_labels3("./labels3/Dron T02.55260362.20220117151609.avi.csv", 4)
-    preds = load_predicions("./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
-
+def visualizeDataset(preds: np.ndarray, labels: np.ndarray, scale: float = 0.5):
     height = 800
     width = 1000
     scale = 0.5
@@ -91,6 +80,19 @@ def main():
         cv2.imshow(f"{label[0]}", image)
         cv2.waitKey(0)
 
+def main():
+    # preds = load_predicions("./predictions2/Dron T02.61920488.20220117151609.csv")
+    # labels = load_labels("./labels2/Dron T02.61920488.20220117151609.avi.csv")
+
+    # preds = load_predictions2("./predictions/coordinates_1.csv")
+    # labels = load_labels2("./labels/connected_1.csv")
+
+    labels = load_labels3("./labels3/Dron T02.55260362.20220117151609.avi.csv", 4)
+    preds = load_predicions("./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
+
+    # visualizeDataset(preds, labels)
+
+    
     # score = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.95, mAP_step=0.05, main_iou_thresh=0.5, plot=True)
     # print(score)
 
