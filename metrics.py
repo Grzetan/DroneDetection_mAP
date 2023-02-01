@@ -124,7 +124,7 @@ def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: in
 
     return ap
 
-def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float, iou_stop: float, iou_step: float, plot: bool=False) -> float:
+def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float = 0.5, iou_stop: float = 0.95, iou_step: float = 0.05, plot: bool=False) -> float:
     """! Calculates mean average precision for every value in given IOU range.
     @brief For iou_start=0.5, iou_stop=0.9, iou_step=0.1 these IOU thresholds will be checked: [0.5, 0.6, 0.7, 0.8, 0.9].
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
@@ -209,9 +209,9 @@ def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: 
 
 def metrics(predictions: np.ndarray, 
             labels: np.ndarray, 
-            mAP_start: float, 
-            mAP_stop: float, 
-            mAP_step: float, 
+            mAP_start: float = 0.5, 
+            mAP_stop: float = 0.95, 
+            mAP_step: float = 0.05, 
             main_iou_thresh: float=0.5, 
             plot: bool=False) -> dict:
     """! Returns metrics for input data.

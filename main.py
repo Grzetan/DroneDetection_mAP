@@ -23,11 +23,11 @@ def load_predicions(path: str):
     return np.array(boxes)
 
 def load_labels(path: str):
-    """! Loads labels from CSV file where each row contains single record [frame_id, x, y, w, h]
+    """! Loads labels from CSV file where each row contains single record [frame_id, x1, y1, x2, y2]
         @returns Numpy array where each record = [frame_id, x1, y1, x2, y2]
     """
     data = list(csv.reader(open(path)))
-    data = [[int(val) for val in row] for row in data[1:]]
+    data = [[int(val) for val in row] for row in data]
 
     return np.array(data)
 
@@ -80,7 +80,7 @@ def visualizeDataset(preds: np.ndarray, labels: np.ndarray, scale: float = 0.5):
 
     random.shuffle(labels)
 
-    for i, label in enumerate(labels[-5:]):
+    for i, label in enumerate(labels[:5]):
         image = np.zeros((height,width,3), np.uint8)
         # Label
         image = cv2.rectangle(image, (int(label[1] * scale), int(label[2] * scale)), (int(label[3] * scale), int(label[4] * scale)), (0,255,0), 1)
@@ -104,7 +104,44 @@ def main():
 
     # New data
 
-    pass
+    label_dir = "./labels3"
+    predictions_dir = "./predictions3"
+
+    labels = load_labels('./labels4_lab_12/labelsCam8.csv')
+    preds = load_predicions('./AirSim/lab_12/airSim_640T0.2/cam8i_s.csv')
+
+    result = metrics(preds, labels)
+    print(result)
+
+    # visualizeDataset(preds, labels)
+
+    # labels_files = [l for l in os.listdir(label_dir) if l.endswith('.avi.csv')]
+    
+    # all_metrics = []
+
+    # for path in os.listdir(predictions_dir):
+    #     files = os.listdir(os.path.join(predictions_dir, path))
+    #     mAPs = []
+    #     FN_counts = []
+    #     mean_distances = []
+
+    #     for l in labels_files:
+    #         pred_file = [f for f in files if f.split('.csv')[0] == l.split('.avi.csv')[0]][0]
+    #         print(os.path.join(label_dir, l), os.path.join(predictions_dir, path, pred_file))
+
+    #         preds = load_predicions(os.path.join(predictions_dir, path, pred_file))
+    #         labels = load_labels3(os.path.join(label_dir, l), 4)
+
+    #         result = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.9, mAP_step=0.05, main_iou_thresh=0.5, plot=False)
+
+    #         mAPs.append(result['mAP'])
+    #         FN_counts.append(result['FN_count'])
+    #         mean_distances.append(result['mean_center_dist'])
+
+    #     all_metrics.append([path, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
+
+    # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
+    # df.to_csv('output.csv')
 
 
     # Old data
