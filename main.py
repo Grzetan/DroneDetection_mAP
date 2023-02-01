@@ -7,8 +7,10 @@ import os
 from collections import Counter
 from metrics import metrics, iou
 
-# Box = frame_id, x1, y1, x2, y2, prob_score
 def load_predicions(path: str):
+    """! Loads predictions from CSV file where each row contains all detected drones (row length is dependant on count of detected drones)
+        @returns Numpy array where each record = [frame_id, x1, y1, x2, y2, score]
+    """
     data = list(csv.reader(open(path)))
     boxes = []
     for row in data:
@@ -20,14 +22,19 @@ def load_predicions(path: str):
             boxes.append([int(row[0])] + box)
     return np.array(boxes)
 
-# frame_id, x1, y1, x2, y2
 def load_labels(path: str):
+    """! Loads labels from CSV file where each row contains single record [frame_id, x, y, w, h]
+        @returns Numpy array where each record = [frame_id, x1, y1, x2, y2]
+    """
     data = list(csv.reader(open(path)))
     data = [[int(val) for val in row] for row in data[1:]]
 
     return np.array(data)
 
 def load_predictions2(path: str):
+    """! Loads predictions from CSV file where each row contains single record [frame_id, x, y, w, h, prob]
+        @returns Numpy array where each record = [frame_id, x1, y1, x2, y2, prob]
+    """
     data = list(csv.reader(open(path)))
     boxes = []
     for row in data[1:]:
@@ -39,6 +46,9 @@ def load_predictions2(path: str):
     return np.array(boxes)
 
 def load_labels2(path: str):
+    """! Loads labels from CSV file where each row contains data for 0, one or two drones. Each drone is [x, y, w, h]. First numer in row is frame_id.
+        @returns Numpy array where each record = [frame_id, x1, y1, x2, y2]
+    """
     data = list(csv.reader(open(path), delimiter=';'))
     boxes = []
     for row in data:
@@ -51,6 +61,9 @@ def load_labels2(path: str):
     return np.array(boxes)
 
 def load_labels3(path: str, shift: int):
+    """! Loads labels from CSV file where each row contains single record [frame_id, x, y, w, h]. It also has the frame shift option
+        @returns Numpy array where each record = [frame_id, x1, y1, x2, y2]
+    """
     data = list(csv.reader(open(path), delimiter=','))
     boxes = []
     for row in data[1:]:
@@ -88,43 +101,54 @@ def main():
     # preds = load_predictions2("./predictions/coordinates_1.csv")
     # labels = load_labels2("./labels/connected_1.csv")
 
-    label_dir = "./labels3"
-    predictions_dir = "./predictions3"
 
-    labels_files = [l for l in os.listdir(label_dir) if l.endswith('.avi.csv')]
+    # New data
+
+    pass
+
+
+    # Old data
+
+    # label_dir = "./labels3"
+    # predictions_dir = "./predictions3"
+
+    # labels_files = [l for l in os.listdir(label_dir) if l.endswith('.avi.csv')]
     
-    all_metrics = []
+    # all_metrics = []
 
-    for path in os.listdir(predictions_dir):
-        files = os.listdir(os.path.join(predictions_dir, path))
-        mAPs = []
-        FN_counts = []
-        mean_distances = []
+    # for path in os.listdir(predictions_dir):
+    #     files = os.listdir(os.path.join(predictions_dir, path))
+    #     mAPs = []
+    #     FN_counts = []
+    #     mean_distances = []
 
-        for l in labels_files:
-            pred_file = [f for f in files if f.split('.csv')[0] == l.split('.avi.csv')[0]][0]
-            print(os.path.join(label_dir, l), os.path.join(predictions_dir, path, pred_file))
+    #     for l in labels_files:
+    #         pred_file = [f for f in files if f.split('.csv')[0] == l.split('.avi.csv')[0]][0]
+    #         print(os.path.join(label_dir, l), os.path.join(predictions_dir, path, pred_file))
 
-            preds = load_predicions(os.path.join(predictions_dir, path, pred_file))
-            labels = load_labels3(os.path.join(label_dir, l), 4)
+    #         preds = load_predicions(os.path.join(predictions_dir, path, pred_file))
+    #         labels = load_labels3(os.path.join(label_dir, l), 4)
 
-            result = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.9, mAP_step=0.05, main_iou_thresh=0.5, plot=False)
+    #         result = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.9, mAP_step=0.05, main_iou_thresh=0.5, plot=False)
 
-            mAPs.append(result['mAP'])
-            FN_counts.append(result['FN_count'])
-            mean_distances.append(result['mean_center_dist'])
+    #         mAPs.append(result['mAP'])
+    #         FN_counts.append(result['FN_count'])
+    #         mean_distances.append(result['mean_center_dist'])
 
-        all_metrics.append([path, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
+    #     all_metrics.append([path, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
 
-    df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
-    df.to_csv('output.csv')
+    # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
+    # df.to_csv('output.csv')
+
+
+
+    # Visualize dataset
 
     # labels = load_labels3("./labels3/Dron T02.55260362.20220117151609.avi.csv", 4)
     # preds = load_predicions("./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
 
     # visualizeDataset(preds, labels)
 
-    
     # score = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.95, mAP_step=0.05, main_iou_thresh=0.5, plot=True)
     # print(score)
 

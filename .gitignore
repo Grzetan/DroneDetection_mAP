@@ -11,6 +11,14 @@ newData/
 movies/
 output.csv
 
+*.avi
+*.mp4
+*.jpeg
+*.zip
+*.onnx
+*.txt
+*.json
+
 # Distribution / packaging
 .Python
 build/
