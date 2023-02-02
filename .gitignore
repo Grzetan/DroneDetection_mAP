@@ -9,7 +9,6 @@ __pycache__/
 newData/
 
 movies/
-output.csv
 
 *.avi
 *.mp4
