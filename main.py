@@ -104,66 +104,66 @@ def main():
 
     # New data
 
-    # label_dir = "./labels4_lab_15"
-    # predictions_dir = "./AirSim/lab_15"
+    label_dir = "./labels4_lab_15"
+    predictions_dir = "./AirSim/lab_15"
 
-    # models = [p for p in os.listdir(predictions_dir) if p.startswith('airSim') and not p.endswith('onnx')]
+    models = [p for p in os.listdir(predictions_dir) if p.startswith('airSim') and not p.endswith('onnx')]
 
-    # all_metrics = []
-
-    # for model in models:
-    #     print(model)
-    #     cams = sorted([p for p in os.listdir(os.path.join(predictions_dir, model)) if p.endswith('.csv')])
-    #     mAPs = []
-    #     FN_counts = []
-    #     mean_distances = []
-    #     for i, cam in enumerate(cams):
-    #         print(cam)
-    #         labels = load_labels(os.path.join(label_dir, f'labelsCam{i+1}.csv'))
-    #         preds = load_predicions(os.path.join(predictions_dir, model, cam))
-
-    #         result = metrics(preds, labels)
-    #         mAPs.append(result['mAP'])
-    #         FN_counts.append(result['FN_count'])
-    #         mean_distances.append(result['mean_center_dist'])
-        
-    #     all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
-
-    # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
-    # df.to_csv('metrics_lab15.csv')
-
-    # Old data
-
-    label_dir = "./labels3"
-    predictions_dir = "./predictions3"
-
-    labels_files = [l for l in os.listdir(label_dir) if l.endswith('.avi.csv')]
-    
     all_metrics = []
 
-    for path in os.listdir(predictions_dir):
-        files = os.listdir(os.path.join(predictions_dir, path))
+    for model in models:
+        print(model)
+        cams = sorted([p for p in os.listdir(os.path.join(predictions_dir, model)) if p.endswith('.csv')])
         mAPs = []
         FN_counts = []
         mean_distances = []
+        for i, cam in enumerate(cams):
+            print(cam)
+            labels = load_labels(os.path.join(label_dir, f'labelsCam{i+1}.csv'))
+            preds = load_predicions(os.path.join(predictions_dir, model, cam))
 
-        for l in labels_files:
-            pred_file = [f for f in files if f.split('.csv')[0] == l.split('.avi.csv')[0]][0]
-            print(os.path.join(label_dir, l), os.path.join(predictions_dir, path, pred_file))
-
-            preds = load_predicions(os.path.join(predictions_dir, path, pred_file))
-            labels = load_labels3(os.path.join(label_dir, l), 4)
-
-            result = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.9, mAP_step=0.05, main_iou_thresh=0.5, plot=False)
-
+            result = metrics(preds, labels)
             mAPs.append(result['mAP'])
             FN_counts.append(result['FN_count'])
             mean_distances.append(result['mean_center_dist'])
-
-        all_metrics.append([path, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
+        
+        all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
 
     df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
-    df.to_csv('output.csv')
+    df.to_csv('metrics_lab15.csv')
+
+    # Old data
+
+    # label_dir = "./labels3"
+    # predictions_dir = "./predictions3"
+
+    # labels_files = [l for l in os.listdir(label_dir) if l.endswith('.avi.csv')]
+    
+    # all_metrics = []
+
+    # for path in os.listdir(predictions_dir):
+    #     files = os.listdir(os.path.join(predictions_dir, path))
+    #     mAPs = []
+    #     FN_counts = []
+    #     mean_distances = []
+
+    #     for l in labels_files:
+    #         pred_file = [f for f in files if f.split('.csv')[0] == l.split('.avi.csv')[0]][0]
+    #         print(os.path.join(label_dir, l), os.path.join(predictions_dir, path, pred_file))
+
+    #         preds = load_predicions(os.path.join(predictions_dir, path, pred_file))
+    #         labels = load_labels3(os.path.join(label_dir, l), 4)
+
+    #         result = metrics(preds, labels)
+
+    #         mAPs.append(result['mAP'])
+    #         FN_counts.append(result['FN_count'])
+    #         mean_distances.append(result['mean_center_dist'])
+
+    #     all_metrics.append([path, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
+
+    # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
+    # df.to_csv('output.csv')
 
 
 

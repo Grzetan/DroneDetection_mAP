@@ -142,7 +142,7 @@ def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float = 0.5, iou
 
     return (sum(APs) / len(APs))
 
-def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: float, method: str = 'squared') -> float:
+def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: float, method: str = 'normal') -> float:
     """! Calculates mean distance between bboxe's centers.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
