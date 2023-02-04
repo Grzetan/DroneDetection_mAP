@@ -142,11 +142,41 @@ def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float = 0.5, iou
 
     return (sum(APs) / len(APs))
 
-def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: float, method: str = 'normal') -> float:
+# Klasyfikacja predykcji-labelów po odleglościach srodkow
+
+# zaleznosc FP od odl srodkow. Wykres reprezentujacy ilosc FP.
+
+# Wizualizacja predykcji i labelów z zdjęciem jako tło
+
+# Obliczyć predykcje dla nowych danych (Kontaktowac sie z Wojciechem). 
+
+# excel i reguly dopasowywujace, kazda predykcja i jej center dist z pred?
+# 
+# /WalkiDronowWizja/WLocher/Datasets/nagrania
+
+# Wojciech lindenheim
+# 250 klatek wywalic
+
+# /WalkiDronowWizja/WLocher/Datasets/nagrania hmlkatalog "test_video" zawiera 50s nagrania do wyznaczenia metryk
+
+def calculateCenterDist(prediction: np.ndarray, label: np.ndarray) -> float:
+    """! Calculates distance between bboxe's centers.
+    @param prediction Numpy array of box data. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param label Numpy array of ground truth bbox. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @return Returns distance between bboxe's centers
+    """
+    c1_x = label[1] + (label[3] - label[1])
+    c1_y = label[2] + (label[4] - label[2])
+    c2_x = prediction[1] + (prediction[3] - prediction[1])
+    c2_y = prediction[2] + (prediction[4] - prediction[2])
+
+    return math.sqrt((c1_x - c2_x)**2 + (c1_y - c2_y)**2)
+
+def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, dist_thresh: float, method: str = 'normal') -> float:
     """! Calculates mean distance between bboxe's centers.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
-    @param iou_thresh Float in range (0, 1> that decides how much detected bbox should intersect with ground truth bbox to be called valid.
+    @param dist_thresh Float in range (0, 1> that decides how much detected bbox should intersect with ground truth bbox to be called valid.
     @param method Method of calculating distance, either 'squared' or 'normal'. Squared squares distances in euclidean distance before summing.S
     @return Returns mean distance between bboxe's centers
     """
@@ -156,49 +186,30 @@ def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, iou_thresh: 
     for key, val in amount_bboxes.items():
         amount_bboxes[key] = np.zeros(val)
 
-    matched_preds = []
-    matched_labels = []
-
     # Sort predictions by score
     predictions = np.array(sorted(predictions, key=lambda x: x[5], reverse=True))
+
+    dists = []
 
     # For every prediction, find groud truth bbox with highest iou and check if it is greater than iou thresh
     for pred in predictions:
         # Get gt bboxes from the same frame
         gt_bboxes = [gt for gt in labels if gt[0] == pred[0]]
 
-        best_iou = 0
+        best_dist = 1e+8
         best_gt_index = 0
 
         for j, gt_box in enumerate(gt_bboxes):
-            iou_score = iou(pred[1:-1], gt_box[1:])
+            dist = calculateCenterDist(pred,gt_box)
 
-            if iou_score > best_iou:
-                best_iou = iou_score
+            if dist < best_dist:
+                best_dist = dist
                 best_gt_index = j
 
-        if best_iou > iou_thresh:
+        if best_dist < dist_thresh:
             if amount_bboxes[pred[0]][best_gt_index] == 0:
-                matched_preds.append(pred[1:-1])
-                matched_labels.append(gt_bboxes[best_gt_index][1:])
+                dists.append(best_dist)
                 amount_bboxes[pred[0]][best_gt_index] = 1
-
-    matched_labels = np.array(matched_labels, dtype=np.int32)
-    matched_preds = np.array(matched_preds, dtype=np.int32)
-
-    if len(matched_labels) != len(matched_preds):
-        raise Exception("Cannot match labels with predictions correctly")
-
-    # When we have matched pairs of label - prediction, calcualte distance between centers
-    dists = []
-    
-    for i in range(len(matched_labels)):
-        c1_x = matched_labels[i][0] + (matched_labels[i][2] - matched_labels[i][0])
-        c1_y = matched_labels[i][1] + (matched_labels[i][3] - matched_labels[i][1])
-        c2_x = matched_preds[i][0] + (matched_preds[i][2] - matched_preds[i][0])
-        c2_y = matched_preds[i][1] + (matched_preds[i][3] - matched_preds[i][1])
-
-        dists.append(math.sqrt((c1_x - c2_x)**2 + (c1_y - c2_y)**2))
 
     if method == 'normal':
         return sum(dists) / len(dists)
@@ -212,7 +223,8 @@ def metrics(predictions: np.ndarray,
             mAP_start: float = 0.5, 
             mAP_stop: float = 0.95, 
             mAP_step: float = 0.05, 
-            main_iou_thresh: float=0.5, 
+            main_iou_thresh: float = 0.5,
+            dist_thresh: int = 15,
             plot: bool=False) -> dict:
     """! Returns metrics for input data.
     @brief Tuple with 3 values is returned, first value is mAP for given mAP thresholds, second value is count of false negatives for given iou thresh, 
@@ -223,6 +235,7 @@ def metrics(predictions: np.ndarray,
     @param mAP_stop Mean average precision ending IOU threshold.
     @param mAP_step Step of thresholds. Total number of checked thresholds depend on this number.
     @param main_iou_thresh IOU threshold which is used in counting FNs and calcualating distance between bboxe's centers
+    @param dist_thresh Distance threshold which is responsible for calculating mean center distance
     @param plot If true precision vs recall graph is shown which can visualize area under curve
     @return Returns tuple of three: (mAP, FN_count, bbox_center_dist)
     """
@@ -235,6 +248,6 @@ def metrics(predictions: np.ndarray,
     FN_count = len(labels) - sum(TP)
 
     # Get average distance between bbox centers
-    dist = distBetweenCenters(predictions, labels, main_iou_thresh)
+    dist = distBetweenCenters(predictions, labels, dist_thresh)
 
     return {"mAP": mAP_score, "FN_count": FN_count, "mean_center_dist": dist}

@@ -104,33 +104,33 @@ def main():
 
     # New data
 
-    label_dir = "./labels4_lab_15"
-    predictions_dir = "./AirSim/lab_15"
+    # label_dir = "./labels4_lab_15"
+    # predictions_dir = "./AirSim/lab_15"
 
-    models = [p for p in os.listdir(predictions_dir) if p.startswith('airSim') and not p.endswith('onnx')]
+    # models = [p for p in os.listdir(predictions_dir) if p.startswith('airSim') and not p.endswith('onnx')]
 
-    all_metrics = []
+    # all_metrics = []
 
-    for model in models:
-        print(model)
-        cams = sorted([p for p in os.listdir(os.path.join(predictions_dir, model)) if p.endswith('.csv')])
-        mAPs = []
-        FN_counts = []
-        mean_distances = []
-        for i, cam in enumerate(cams):
-            print(cam)
-            labels = load_labels(os.path.join(label_dir, f'labelsCam{i+1}.csv'))
-            preds = load_predicions(os.path.join(predictions_dir, model, cam))
+    # for model in models:
+    #     print(model)
+    #     cams = sorted([p for p in os.listdir(os.path.join(predictions_dir, model)) if p.endswith('.csv')])
+    #     mAPs = []
+    #     FN_counts = []
+    #     mean_distances = []
+    #     for i, cam in enumerate(cams):
+    #         print(cam)
+    #         labels = load_labels(os.path.join(label_dir, f'labelsCam{i+1}.csv'))
+    #         preds = load_predicions(os.path.join(predictions_dir, model, cam))
 
-            result = metrics(preds, labels)
-            mAPs.append(result['mAP'])
-            FN_counts.append(result['FN_count'])
-            mean_distances.append(result['mean_center_dist'])
+    #         result = metrics(preds, labels)
+    #         mAPs.append(result['mAP'])
+    #         FN_counts.append(result['FN_count'])
+    #         mean_distances.append(result['mean_center_dist'])
         
-        all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
+    #     all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
 
-    df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
-    df.to_csv('metrics_lab15.csv')
+    # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
+    # df.to_csv('metrics_lab15.csv')
 
     # Old data
 
@@ -154,7 +154,7 @@ def main():
     #         preds = load_predicions(os.path.join(predictions_dir, path, pred_file))
     #         labels = load_labels3(os.path.join(label_dir, l), 4)
 
-    #         result = metrics(preds, labels)
+    #         result = metrics(preds, labels, mAP_start=0.1, mAP_stop=0.9, mAP_step=0.05)
 
     #         mAPs.append(result['mAP'])
     #         FN_counts.append(result['FN_count'])
@@ -169,13 +169,13 @@ def main():
 
     # Visualize dataset
 
-    # labels = load_labels3("./labels3/Dron T02.55260362.20220117151609.avi.csv", 3)
-    # preds = load_predicions("./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
+    labels = load_labels3("./labels3/Dron T02.55260362.20220117151609.avi.csv", 3)
+    preds = load_predicions("./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
 
     # visualizeDataset(preds, labels)
 
-    # score = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.95, mAP_step=0.05, main_iou_thresh=0.5, plot=True)
-    # print(score)
+    score = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.55, mAP_step=0.05, main_iou_thresh=0.5, dist_thresh=20, plot=False)
+    print(score)
 
     # # Save to CSV file
     # df = pd.DataFrame([score])
