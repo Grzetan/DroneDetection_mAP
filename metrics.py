@@ -144,14 +144,12 @@ def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float = 0.5, iou
 
 # Klasyfikacja predykcji-labelów po odleglościach srodkow +
 
-# zaleznosc FP od odl srodkow. Wykres reprezentujacy ilosc FP.
+# zaleznosc FP od odl srodkow. Wykres reprezentujacy ilosc FP. +
 
 # Wizualizacja predykcji i labelów z zdjęciem jako tło
 
 # Obliczyć predykcje dla nowych danych (Kontaktowac sie z Wojciechem). 
-
-# excel i reguly dopasowywujace, kazda predykcja i jej center dist z pred?
-# 
+ 
 # /WalkiDronowWizja/WLocher/Datasets/nagrania
 
 # Wojciech lindenheim
@@ -254,14 +252,11 @@ def metrics(predictions: np.ndarray,
 
     return {"mAP": mAP_score, "FN_count": FN_count, "mean_center_dist": dist}
 
-def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1):
-    """! Plots FN count vs mean center distance
+def getCenterDistances(predictions: np.ndarray, labels: np.ndarray) -> list:
+    """! Matches closest ground truth box to every prediction and returns list of distances between each prediction and matched ground truth box
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
-    @param start Starting distance for bboxes to be matched
-    @param stop Ending distance for bboxes to be matched
-    @param step Step of thresholds. Total number of checked thresholds depend on this number.
-    @return void
+    @return List of distances between centers.
     """
 
     # First, pair label with predictions
@@ -287,8 +282,47 @@ def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, s
             if dist < best_dist:
                 best_dist = dist
 
-        dists.append(best_dist)
+        if best_dist != 1e+8: dists.append(best_dist) # Not sure what to do if sample does not have any ground truths (For now, skip prediction)
 
+    return dists
+
+def plotMeanDistance(predictions: np.ndarray, labels: np.ndarray, start: int = 100, end: int = 2000, step: int = 10):
+    """! Plots mean center distance vs FN count. Output is a opposite result to plotFNCount
+    @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @param start Starting arbitrial FN count
+    @param stop Ending arbitrial FN count
+    @param step Step of thresholds.
+    @return void
+    """
+
+    dists = getCenterDistances(predictions, labels)
+
+    FN_counts = []
+    distances = []
+
+    dists = sorted(dists)
+    for val in np.arange(start, end, step):
+        FN_counts.append(val)
+        distances.append(sum(dists[:val]) / len(dists[:val]))
+
+    plt.plot(FN_counts, distances)
+    plt.ylabel('Mean Distance')
+    plt.xlabel('FN count')
+    plt.title(f'Prediction count: {len(predictions)}')
+    plt.show()
+
+def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1):
+    """! Plots FN count vs mean center distance. Output is a opposite result to plotMeanDistance
+    @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @param start Starting distance for bboxes to be matched
+    @param stop Ending distance for bboxes to be matched
+    @param step Step of thresholds. Total number of checked thresholds depend on this number.
+    @return void
+    """
+
+    dists = getCenterDistances(predictions, labels)
 
     FN_counts = []
     distances = []
