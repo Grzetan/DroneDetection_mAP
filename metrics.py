@@ -8,6 +8,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from scipy.integrate import simpson
 import math
+import cv2
 
 def iou(pred: np.ndarray, label: np.ndarray) -> np.ndarray:
     """! Calculates intersection over union of two input boxes
@@ -141,21 +142,6 @@ def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float = 0.5, iou
         APs.append(averagePrecision(predictions, labels, thresh, plot))
 
     return (sum(APs) / len(APs))
-
-# Klasyfikacja predykcji-labelów po odleglościach srodkow +
-
-# zaleznosc FP od odl srodkow. Wykres reprezentujacy ilosc FP. +
-
-# Wizualizacja predykcji i labelów z zdjęciem jako tło
-
-# Obliczyć predykcje dla nowych danych (Kontaktowac sie z Wojciechem). 
- 
-# /WalkiDronowWizja/WLocher/Datasets/nagrania
-
-# Wojciech lindenheim
-# 250 klatek wywalic
-
-# /WalkiDronowWizja/WLocher/Datasets/nagrania hmlkatalog "test_video" zawiera 50s nagrania do wyznaczenia metryk
 
 def calculateCenterDist(prediction: np.ndarray, label: np.ndarray) -> float:
     """! Calculates distance between bboxe's centers.
@@ -337,3 +323,46 @@ def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, s
     plt.ylabel('FN count')
     plt.title(f'Prediction count: {len(predictions)}')
     plt.show()
+
+# Klasyfikacja predykcji-labelów po odleglościach srodkow +
+
+# zaleznosc FP od odl srodkow. Wykres reprezentujacy ilosc FP. +
+
+# Wizualizacja predykcji i labelów z zdjęciem jako tło
+
+# Obliczyć predykcje dla nowych danych (Kontaktowac sie z Wojciechem). 
+ 
+# /WalkiDronowWizja/WLocher/Datasets/nagrania
+
+# Wojciech lindenheim
+# 250 klatek wywalic
+
+# /WalkiDronowWizja/WLocher/Datasets/nagrania hmlkatalog "test_video" zawiera 50s nagrania do wyznaczenia metryk
+
+def visualizeDataset(predictions: np.ndarray, labels: np.ndarray, video: str = "", start: int = 100, step: int = 10, n: int = 10):
+    """! Visualizes dataset using openCV
+    @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @param Video Optional path to video so background is an actual frame from video not just a black background.
+    @param start Starting frame to visualize
+    @param step Jump between frames.
+    @param n How many frames to visualize
+    @return void
+    """
+    height = 800
+    width = 1000
+    scale = 0.5
+
+    for i in range(start, start+n*step, step):
+        image = np.zeros((height,width,3), np.uint8)
+        label = labels[i]
+        image = cv2.rectangle(image, (int(label[1] * scale), int(label[2] * scale)), (int(label[3] * scale), int(label[4] * scale)), (0,255,0), 1)
+
+        # Load predictions
+        ps = [p for p in predictions if p[0] == label[0]]
+        for p in ps:
+            image = cv2.rectangle(image, (int(p[1] * scale), int(p[2] * scale)), (int(p[3] * scale), int(p[4] * scale)), (0,0, 255), 1)
+            cv2.putText(image, f"{round(iou(np.array(p[1:-1]), np.array(label[1:])), 2)}", (int(p[3]*scale), int(p[2]*scale)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
+
+        cv2.imshow(f"Visualization", image)
+        cv2.waitKey(0)
