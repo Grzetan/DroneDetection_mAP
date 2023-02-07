@@ -142,7 +142,7 @@ def mAP(predictions: np.ndarray, labels: np.ndarray, iou_start: float = 0.5, iou
 
     return (sum(APs) / len(APs))
 
-# Klasyfikacja predykcji-labelów po odleglościach srodkow
+# Klasyfikacja predykcji-labelów po odleglościach srodkow +
 
 # zaleznosc FP od odl srodkow. Wykres reprezentujacy ilosc FP.
 
@@ -172,13 +172,13 @@ def calculateCenterDist(prediction: np.ndarray, label: np.ndarray) -> float:
 
     return math.sqrt((c1_x - c2_x)**2 + (c1_y - c2_y)**2)
 
-def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, dist_thresh: float, method: str = 'normal') -> float:
+def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, dist_thresh: float, method: str = 'normal') -> tuple:
     """! Calculates mean distance between bboxe's centers.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
     @param dist_thresh Float in range (0, 1> that decides how much detected bbox should intersect with ground truth bbox to be called valid.
     @param method Method of calculating distance, either 'squared' or 'normal'. Squared squares distances in euclidean distance before summing.S
-    @return Returns mean distance between bboxe's centers
+    @return Returns tuple of mean distance between bboxe's centers and FN count
     """
 
     # First, pair label with predictions
@@ -190,6 +190,7 @@ def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, dist_thresh:
     predictions = np.array(sorted(predictions, key=lambda x: x[5], reverse=True))
 
     dists = []
+    FN_count = 0
 
     # For every prediction, find groud truth bbox with highest iou and check if it is greater than iou thresh
     for pred in predictions:
@@ -206,17 +207,18 @@ def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, dist_thresh:
                 best_dist = dist
                 best_gt_index = j
 
-        if best_dist < dist_thresh:
-            if amount_bboxes[pred[0]][best_gt_index] == 0:
-                dists.append(best_dist)
-                amount_bboxes[pred[0]][best_gt_index] = 1
+        if best_dist < dist_thresh and amount_bboxes[pred[0]][best_gt_index] == 0:
+            dists.append(best_dist)
+            amount_bboxes[pred[0]][best_gt_index] = 1
+        else:
+            FN_count += 1
 
     if method == 'normal':
-        return sum(dists) / len(dists)
+        return sum(dists) / len(dists), FN_count
     elif method == 'squared':
-        return sum([i**2 for i in dists]) / len(dists)
+        return sum([i**2 for i in dists]) / len(dists), FN_count
     else:
-        return 0
+        return 0, FN_count
 
 def metrics(predictions: np.ndarray, 
             labels: np.ndarray, 
@@ -248,6 +250,56 @@ def metrics(predictions: np.ndarray,
     FN_count = len(labels) - sum(TP)
 
     # Get average distance between bbox centers
-    dist = distBetweenCenters(predictions, labels, dist_thresh)
+    dist, FP = distBetweenCenters(predictions, labels, dist_thresh)
 
     return {"mAP": mAP_score, "FN_count": FN_count, "mean_center_dist": dist}
+
+def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1):
+    """! Plots FN count vs mean center distance
+    @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @param start Starting distance for bboxes to be matched
+    @param stop Ending distance for bboxes to be matched
+    @param step Step of thresholds. Total number of checked thresholds depend on this number.
+    @return void
+    """
+
+    # First, pair label with predictions
+    amount_bboxes = Counter([gt[0] for gt in labels])
+    for key, val in amount_bboxes.items():
+        amount_bboxes[key] = np.zeros(val)
+
+    # Sort predictions by score
+    predictions = np.array(sorted(predictions, key=lambda x: x[5], reverse=True))
+
+    dists = []
+
+    # For every prediction, find groud truth bbox with highest iou and check if it is greater than iou thresh
+    for pred in predictions:
+        # Get gt bboxes from the same frame
+        gt_bboxes = [gt for gt in labels if gt[0] == pred[0]]
+
+        best_dist = 1e+8
+
+        for j, gt_box in enumerate(gt_bboxes):
+            dist = calculateCenterDist(pred,gt_box)
+
+            if dist < best_dist:
+                best_dist = dist
+
+        dists.append(best_dist)
+
+
+    FN_counts = []
+    distances = []
+
+    for val in np.arange(start, stop, step):
+        valid_dists = [d for d in dists if d < val]
+        FN_counts.append(len(predictions) - len(valid_dists))
+        distances.append(sum(valid_dists) / len(valid_dists))
+    
+    plt.plot(distances, FN_counts)
+    plt.xlabel('Distance threshold')
+    plt.ylabel('FN count')
+    plt.title(f'Prediction count: {len(predictions)}')
+    plt.show()

@@ -5,7 +5,7 @@ import cv2
 import random
 import os
 from collections import Counter
-from metrics import metrics, iou
+from metrics import metrics, plotFNCount
 
 def load_predicions(path: str):
     """! Loads predictions from CSV file where each row contains all detected drones (row length is dependant on count of detected drones)
@@ -174,8 +174,10 @@ def main():
 
     # visualizeDataset(preds, labels)
 
-    score = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.55, mAP_step=0.05, main_iou_thresh=0.5, dist_thresh=20, plot=False)
-    print(score)
+    # score = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.55, mAP_step=0.05, main_iou_thresh=0.5, dist_thresh=20, plot=False)
+    # print(score)
+
+    plotFNCount(preds, labels)
 
     # # Save to CSV file
     # df = pd.DataFrame([score])
