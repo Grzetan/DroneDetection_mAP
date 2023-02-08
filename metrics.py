@@ -324,12 +324,6 @@ def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, s
     plt.title(f'Prediction count: {len(predictions)}')
     plt.show()
 
-# Klasyfikacja predykcji-labelów po odleglościach srodkow +
-
-# zaleznosc FP od odl srodkow. Wykres reprezentujacy ilosc FP. +
-
-# Wizualizacja predykcji i labelów z zdjęciem jako tło
-
 # Obliczyć predykcje dla nowych danych (Kontaktowac sie z Wojciechem). 
  
 # /WalkiDronowWizja/WLocher/Datasets/nagrania
@@ -339,7 +333,7 @@ def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, s
 
 # /WalkiDronowWizja/WLocher/Datasets/nagrania hmlkatalog "test_video" zawiera 50s nagrania do wyznaczenia metryk
 
-def visualizeDataset(predictions: np.ndarray, labels: np.ndarray, video: str = "", start: int = 100, step: int = 10, n: int = 10):
+def visualizeDataset(predictions: np.ndarray, labels: np.ndarray, video: str = "", start: int = 0, step: int = 10, n: int = 10):
     """! Visualizes dataset using openCV
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
@@ -349,12 +343,21 @@ def visualizeDataset(predictions: np.ndarray, labels: np.ndarray, video: str = "
     @param n How many frames to visualize
     @return void
     """
-    height = 800
-    width = 1000
-    scale = 0.5
+    height = 1082
+    width = 1924
+    scale = 1
+
+    vid = None
+    if video != "":
+        vid = cv2.VideoCapture(video)
 
     for i in range(start, start+n*step, step):
         image = np.zeros((height,width,3), np.uint8)
+
+        if vid is not None:
+            vid.set(cv2.CAP_PROP_POS_FRAMES, i)
+            ret, image = vid.read()
+
         label = labels[i]
         image = cv2.rectangle(image, (int(label[1] * scale), int(label[2] * scale)), (int(label[3] * scale), int(label[4] * scale)), (0,255,0), 1)
 
