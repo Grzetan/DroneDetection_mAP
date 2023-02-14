@@ -140,15 +140,15 @@ def main():
     # df.to_csv('output.csv')
 
 
-    labels = load_labels3("./labels3/Dron T02.55260362.20220117151609.avi.csv", 3)
-    preds = load_predicions("./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
+    labels = load_labels3("./labels/labels3/Dron T02.55260362.20220117151609.avi.csv", 3)
+    preds = load_predicions("./predictions/predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
 
-    visualizeDataset(preds, labels, video='./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.mp4')
+    # visualizeDataset(preds, labels, video='./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.mp4')
 
     # score = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.55, mAP_step=0.05, main_iou_thresh=0.5, dist_thresh=20, plot=False)
     # print(score)
 
-    # plotMeanDistance(preds, labels, end=int(len(preds)))
+    plotMeanDistance(preds, labels, end=int(0.8*len(preds)))
 
     # # Save to CSV file
     # df = pd.DataFrame([score])
