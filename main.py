@@ -1,6 +1,6 @@
 import numpy as np
 import csv
-from metrics import metrics, plotFNCount, plotMeanDistance, visualizeDataset
+from metrics import *
 
 def load_predicions(path: str):
     """! Loads predictions from CSV file where each row contains all detected drones (row length is dependant on count of detected drones)
@@ -149,6 +149,7 @@ def main():
     # print(score)
 
     plotMeanDistance(preds, labels, end=int(0.8*len(preds)))
+    # plotFPRate(preds, labels)
 
     # # Save to CSV file
     # df = pd.DataFrame([score])
