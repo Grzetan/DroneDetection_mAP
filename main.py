@@ -148,8 +148,8 @@ def main():
     # score = metrics(preds, labels, mAP_start=0.5, mAP_stop=0.55, mAP_step=0.05, main_iou_thresh=0.5, dist_thresh=20, plot=False)
     # print(score)
 
-    plotMeanDistance(preds, labels, end=int(0.8*len(preds)))
-    # plotFPRate(preds, labels)
+    # plotMeanDistance(preds, labels, end=int(0.8*len(preds)))
+    plotFNCount(preds, labels)
 
     # # Save to CSV file
     # df = pd.DataFrame([score])
