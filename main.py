@@ -150,6 +150,9 @@ def main():
 
     # plotMeanDistance(preds, labels, end=int(0.8*len(preds)))
     plotFNCount(preds, labels)
+    # plotFNRate(preds, labels)
+    plotFPCount(preds, labels)
+    # plotFPRate(preds, labels)
 
     # # Save to CSV file
     # df = pd.DataFrame([score])
