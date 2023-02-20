@@ -308,23 +308,20 @@ def plotFPCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, s
     @return void
     """
 
-    dists = getCenterDistances(predictions, labels)
-
     FP_counts = []
     distances = []
 
     for val in np.arange(start, stop, step):
-        valid_dists = [d for d in dists if d < val]
-        FP_counts.append(len(predictions) - len(valid_dists))
-        distances.append(sum(valid_dists) / len(valid_dists))
+        dist, count = distBetweenCenters(predictions, labels, dist_thresh=val)
+        FP_counts.append(count)
+        distances.append(dist)
     
-    print(FP_counts)
-
-    plt.plot(FP_counts, distances)
-    plt.ylabel('Mean Center Distance')
-    plt.xlabel('FP count')
-    # plt.title(f'Prediction count: {len(predictions)}')
-    plt.show()
+    # plt.plot(FP_counts, distances)
+    # plt.ylabel('Mean Center Distance')
+    # plt.xlabel('FP count')
+    # # plt.title(f'Prediction count: {len(predictions)}')
+    # plt.show()
+    return FP_counts, distances
 
 def plotFPRate(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1):
     """! Plots FP Rate vs mean center distance. False positive means that there wasa detection when no ground truth box.
@@ -387,13 +384,13 @@ def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, s
         FN_counts.append((len(labels) - len(valid_dists)))
         distances.append(sum(valid_dists) / len(valid_dists))
 
-    print(FN_counts)
+    # plt.plot(FN_counts, distances)
+    # plt.ylabel('Mean center distance')
+    # plt.xlabel('FN Count')
+    # # plt.title(f'Prediction count: {len(predictions)}')
+    # plt.show()
 
-    plt.plot(FN_counts, distances)
-    plt.ylabel('Mean center distance')
-    plt.xlabel('FN Count')
-    # plt.title(f'Prediction count: {len(predictions)}')
-    plt.show()
+    return FN_counts, distances
 
 def plotFNRate(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1):
     """! Plots FN Rate vs mean center distance. False negative means that there wasn't a detection for ground truth box.

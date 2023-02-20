@@ -1,5 +1,6 @@
 import numpy as np
 import csv
+import os
 from metrics import *
 
 def load_predicions(path: str):
@@ -78,30 +79,66 @@ def main():
 
     # New data
 
-    # label_dir = "./labels4_lab_15"
-    # predictions_dir = "./AirSim/lab_15"
+    label_dir = "./labels/labels4_lab_15"
+    predictions_dir = "./AirSim/lab_15"
 
-    # models = [p for p in os.listdir(predictions_dir) if p.startswith('airSim') and not p.endswith('onnx')]
+    models = [p for p in os.listdir(predictions_dir) if p.startswith('airSim') and not p.endswith('onnx')]
 
-    # all_metrics = []
+    all_metrics = []
 
-    # for model in models:
-    #     print(model)
-    #     cams = sorted([p for p in os.listdir(os.path.join(predictions_dir, model)) if p.endswith('.csv')])
-    #     mAPs = []
-    #     FN_counts = []
-    #     mean_distances = []
-    #     for i, cam in enumerate(cams):
-    #         print(cam)
-    #         labels = load_labels(os.path.join(label_dir, f'labelsCam{i+1}.csv'))
-    #         preds = load_predicions(os.path.join(predictions_dir, model, cam))
+    for model in models:
+        print(model)
+        cams = sorted([p for p in os.listdir(os.path.join(predictions_dir, model)) if p.endswith('.csv')])
+        # mAPs = []
+        FN_counts = []
+        mean_distances = []
+        FP_counts = []
+        mean_distances_fp = []
 
-    #         result = metrics(preds, labels)
-    #         mAPs.append(result['mAP'])
-    #         FN_counts.append(result['FN_count'])
-    #         mean_distances.append(result['mean_center_dist'])
+        for i, cam in enumerate(cams):
+            print(cam)
+            labels = load_labels(os.path.join(label_dir, f'labelsCam{i+1}.csv'))
+            preds = load_predicions(os.path.join(predictions_dir, model, cam))
+
+            fn, d = plotFNCount(preds, labels)
+            fp, d_fp = plotFPCount(preds, labels)
+            FN_counts.append(fn)
+            FP_counts.append(fp)
+            mean_distances.append(d)
+            mean_distances_fp.append(d_fp)
+            # result = metrics(preds, labels)
+            # mAPs.append(result['mAP'])
+            # FN_counts.append(result['FN_count'])
+            # mean_distances.append(result['mean_center_dist'])
         
-    #     all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
+        f_fn = []
+        d_fn = []
+        f_fp = []
+        d_fp = []
+        for i in range(len(FN_counts[0])):
+            f_vals = [val[i] for val in FN_counts]
+            d_vals = [dis[i] for dis in mean_distances]
+            fp_vals = [val[i] for val in FP_counts]
+            dp_vals = [dis[i] for dis in mean_distances_fp]
+
+            f_fn.append(sum(f_vals) / len(f_vals))
+            d_fn.append(sum(d_vals) / len(d_vals))
+            f_fp.append(sum(fp_vals) / len(fp_vals))
+            d_fp.append(sum(dp_vals) / len(dp_vals))
+        
+        plt.plot(f_fn, d_fn)
+        plt.ylabel('Mean center distance')
+        plt.xlabel('FN Count')
+        plt.title(f'Lab 12 Model: {model}')
+        plt.show()
+
+        plt.plot(f_fp, d_fp)
+        plt.ylabel('Mean center distance')
+        plt.xlabel('FP Count')
+        plt.title(f'Lab 12 Model: {model}')
+        plt.show()
+
+        # all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
 
     # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
     # df.to_csv('metrics_lab15.csv')
@@ -140,8 +177,8 @@ def main():
     # df.to_csv('output.csv')
 
 
-    labels = load_labels3("./labels/labels3/Dron T02.55260362.20220117151609.avi.csv", 3)
-    preds = load_predicions("./predictions/predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
+    # labels = load_labels3("./labels/labels3/Dron T02.55260362.20220117151609.avi.csv", 3)
+    # preds = load_predicions("./predictions/predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")
 
     # visualizeDataset(preds, labels, video='./predictions3/best_640T0.2/Dron T02.55260362.20220117151609.mp4')
 
@@ -149,9 +186,9 @@ def main():
     # print(score)
 
     # plotMeanDistance(preds, labels, end=int(0.8*len(preds)))
-    plotFNCount(preds, labels)
+    # plotFNCount(preds, labels)
     # plotFNRate(preds, labels)
-    plotFPCount(preds, labels)
+    # plotFPCount(preds, labels)
     # plotFPRate(preds, labels)
 
     # # Save to CSV file
