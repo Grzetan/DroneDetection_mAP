@@ -69,6 +69,60 @@ def load_labels3(path: str, shift: int):
             boxes.append(box)
     return np.array(boxes)
 
+def plotAirSimData(prediction_path: str, label_path: str):
+    models = [p for p in os.listdir(prediction_path) if p.startswith('airSim') and not p.endswith('onnx')]
+
+    for model in models:
+        # These lists will be used to plot graphs
+        FN_counts_model = []
+        FP_counts_model = []
+        FN_MDC_model = []
+        FP_MDC_model = []
+
+        print(model)
+        cams = sorted([p for p in os.listdir(os.path.join(prediction_path, model)) if p.endswith('.csv')])
+        FN_counts_cameras = []
+        FN_MDC_cameras = []
+        FP_counts_cameras = []
+        FP_MDC_cameras = []
+
+        for i, cam in enumerate(cams):
+            print(cam)
+            labels = load_labels(os.path.join(label_path, f'labelsCam{i+1}.csv'))
+            preds = load_predicions(os.path.join(prediction_path, model, cam))
+
+            fn, fn_mcd = plotFNCount(preds, labels, plot=False)
+            fp, fp_mcd = plotFPCount(preds, labels, plot=False)
+
+            FN_counts_cameras.append(fn)
+            FP_counts_cameras.append(fp)
+            FN_MDC_cameras.append(fn_mcd)
+            FP_MDC_cameras.append(fp_mcd)
+        
+        # Average results from all cameras element wise
+        for i in range(len(FN_counts_cameras[0])):
+            fn_vals = [val[i] for val in FN_counts_cameras]
+            fn_mcd_vals = [dis[i] for dis in FN_MDC_cameras]
+            fp_vals = [val[i] for val in FP_counts_cameras]
+            fp_mcd_vals = [dis[i] for dis in FP_MDC_cameras]
+
+            FN_counts_model.append(sum(fn_vals) / len(fn_vals))
+            FN_MDC_model.append(sum(fn_mcd_vals) / len(fn_mcd_vals))
+            FP_counts_model.append(sum(fp_vals) / len(fp_vals))
+            FP_MDC_model.append(sum(fp_mcd_vals) / len(fp_mcd_vals))
+
+        plt.plot(FN_counts_model, FN_MDC_model)
+        plt.ylabel('Mean center distance')
+        plt.xlabel('FN Count')
+        plt.title(f'Model: {model}')
+        plt.show()
+
+        plt.plot(FP_counts_model, FP_MDC_model)
+        plt.ylabel('Mean center distance')
+        plt.xlabel('FP Count')
+        plt.title(f'Model: {model}')
+        plt.show()
+
 def main():
     # preds = load_predicions("./predictions2/Dron T02.61920488.20220117151609.csv")
     # labels = load_labels("./labels2/Dron T02.61920488.20220117151609.avi.csv")
@@ -78,65 +132,7 @@ def main():
 
 
     # New data
-
-    label_dir = "./labels/labels4_lab_15"
-    predictions_dir = "./AirSim/lab_15"
-
-    models = [p for p in os.listdir(predictions_dir) if p.startswith('airSim') and not p.endswith('onnx')]
-
-    all_metrics = []
-
-    for model in models:
-        print(model)
-        cams = sorted([p for p in os.listdir(os.path.join(predictions_dir, model)) if p.endswith('.csv')])
-        # mAPs = []
-        FN_counts = []
-        mean_distances = []
-        FP_counts = []
-        mean_distances_fp = []
-
-        for i, cam in enumerate(cams):
-            print(cam)
-            labels = load_labels(os.path.join(label_dir, f'labelsCam{i+1}.csv'))
-            preds = load_predicions(os.path.join(predictions_dir, model, cam))
-
-            fn, d = plotFNCount(preds, labels)
-            fp, d_fp = plotFPCount(preds, labels)
-            FN_counts.append(fn)
-            FP_counts.append(fp)
-            mean_distances.append(d)
-            mean_distances_fp.append(d_fp)
-            # result = metrics(preds, labels)
-            # mAPs.append(result['mAP'])
-            # FN_counts.append(result['FN_count'])
-            # mean_distances.append(result['mean_center_dist'])
-        
-        f_fn = []
-        d_fn = []
-        f_fp = []
-        d_fp = []
-        for i in range(len(FN_counts[0])):
-            f_vals = [val[i] for val in FN_counts]
-            d_vals = [dis[i] for dis in mean_distances]
-            fp_vals = [val[i] for val in FP_counts]
-            dp_vals = [dis[i] for dis in mean_distances_fp]
-
-            f_fn.append(sum(f_vals) / len(f_vals))
-            d_fn.append(sum(d_vals) / len(d_vals))
-            f_fp.append(sum(fp_vals) / len(fp_vals))
-            d_fp.append(sum(dp_vals) / len(dp_vals))
-        
-        plt.plot(f_fn, d_fn)
-        plt.ylabel('Mean center distance')
-        plt.xlabel('FN Count')
-        plt.title(f'Lab 12 Model: {model}')
-        plt.show()
-
-        plt.plot(f_fp, d_fp)
-        plt.ylabel('Mean center distance')
-        plt.xlabel('FP Count')
-        plt.title(f'Lab 12 Model: {model}')
-        plt.show()
+    
 
         # all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
 
@@ -176,6 +172,8 @@ def main():
     # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
     # df.to_csv('output.csv')
 
+    # plot lab sequences
+    plotAirSimData('./AirSim/lab_12', './labels/labels4_lab_12')
 
     # labels = load_labels3("./labels/labels3/Dron T02.55260362.20220117151609.avi.csv", 3)
     # preds = load_predicions("./predictions/predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")

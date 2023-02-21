@@ -298,14 +298,15 @@ def plotMeanDistance(predictions: np.ndarray, labels: np.ndarray, start: int = 1
     # plt.title(f'Prediction count: {len(predictions)}')
     plt.show()
 
-def plotFPCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1):
+def plotFPCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1, plot: bool = True):
     """! Plots FP count vs mean center distance. False positive means that there wasa detection when no ground truth box.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
     @param start Starting distance for bboxes to be matched
     @param stop Ending distance for bboxes to be matched
     @param step Step of thresholds. Total number of checked thresholds depend on this number.
-    @return void
+    @param plot Controls if graph is plotted
+    @return Returns FP count and list of MCD across different thresholds
     """
 
     FP_counts = []
@@ -316,11 +317,13 @@ def plotFPCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, s
         FP_counts.append(count)
         distances.append(dist)
     
-    # plt.plot(FP_counts, distances)
-    # plt.ylabel('Mean Center Distance')
-    # plt.xlabel('FP count')
-    # # plt.title(f'Prediction count: {len(predictions)}')
-    # plt.show()
+    if plot:
+        plt.plot(FP_counts, distances)
+        plt.ylabel('Mean Center Distance')
+        plt.xlabel('FP count')
+        # plt.title(f'Prediction count: {len(predictions)}')
+        plt.show()
+
     return FP_counts, distances
 
 def plotFPRate(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1):
@@ -349,14 +352,15 @@ def plotFPRate(predictions: np.ndarray, labels: np.ndarray, start: float = 3, st
     # plt.title(f'Prediction count: {len(predictions)}')
     plt.show()
 
-def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1):
+def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, stop: float = 40, step: float = 1, plot: bool = True):
     """! Plots FN Count vs mean center distance. False negative means that there wasn't a detection for ground truth box.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
     @param start Starting distance for bboxes to be matched
     @param stop Ending distance for bboxes to be matched
     @param step Step of thresholds. Total number of checked thresholds depend on this number.
-    @return void
+    @param plot Controls if graph is plotted
+    @return FN count and list od MDC across different thresholds
     """
     
     dists = []
@@ -384,11 +388,12 @@ def plotFNCount(predictions: np.ndarray, labels: np.ndarray, start: float = 3, s
         FN_counts.append((len(labels) - len(valid_dists)))
         distances.append(sum(valid_dists) / len(valid_dists))
 
-    # plt.plot(FN_counts, distances)
-    # plt.ylabel('Mean center distance')
-    # plt.xlabel('FN Count')
-    # # plt.title(f'Prediction count: {len(predictions)}')
-    # plt.show()
+    if plot:
+        plt.plot(FN_counts, distances)
+        plt.ylabel('Mean center distance')
+        plt.xlabel('FN Count')
+        # plt.title(f'Prediction count: {len(predictions)}')
+        plt.show()
 
     return FN_counts, distances
 
