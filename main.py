@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 import os
+import pandas as pd
 from metrics import *
 
 def load_predicions(path: str):
@@ -72,7 +73,9 @@ def load_labels3(path: str, shift: int):
 def plotAirSimData(prediction_path: str, label_path: str):
     models = [p for p in os.listdir(prediction_path) if p.startswith('airSim') and not p.endswith('onnx')]
 
-    for model in models:
+    models = sorted(models)
+
+    for model in [models[1]]:
         # These lists will be used to plot graphs
         FN_counts_model = []
         FP_counts_model = []
@@ -94,6 +97,10 @@ def plotAirSimData(prediction_path: str, label_path: str):
             fn, fn_mcd = plotFNCount(preds, labels, plot=False)
             fp, fp_mcd = plotFPCount(preds, labels, plot=False)
 
+            # If we want rates instead of counts
+            fn = [f / len(labels) for f in fn]
+            fp = [f / len(labels) for f in fp]
+
             FN_counts_cameras.append(fn)
             FP_counts_cameras.append(fp)
             FN_MDC_cameras.append(fn_mcd)
@@ -113,15 +120,44 @@ def plotAirSimData(prediction_path: str, label_path: str):
 
         plt.plot(FN_counts_model, FN_MDC_model)
         plt.ylabel('Mean center distance')
-        plt.xlabel('FN Count')
+        plt.xlabel('FN Rate')
         plt.title(f'Model: {model}')
         plt.show()
 
         plt.plot(FP_counts_model, FP_MDC_model)
         plt.ylabel('Mean center distance')
-        plt.xlabel('FP Count')
+        plt.xlabel('FP Rate')
         plt.title(f'Model: {model}')
         plt.show()
+
+def getHMLMetrics(label_dir, predictions_dir):
+    labels_files = [l for l in os.listdir(label_dir) if l.endswith('.avi.csv')]
+    
+    all_metrics = []
+
+    for thresh in [10, 20, 30]:
+        for path in os.listdir(predictions_dir):
+            files = os.listdir(os.path.join(predictions_dir, path))
+            MCD = []
+            FNR = []
+            FPR = []
+
+            for l in labels_files:
+                pred_file = [f for f in files if f.split('.csv')[0] == l.split('.avi.csv')[0]][0]
+                print(os.path.join(label_dir, l), os.path.join(predictions_dir, path, pred_file))
+
+                preds = load_predicions(os.path.join(predictions_dir, path, pred_file))
+                labels = load_labels3(os.path.join(label_dir, l), 4)
+
+                result = calculateRates(preds, labels, thresh = thresh)
+                MCD.append(result['MCD'])
+                FNR.append(result['FNR'])
+                FPR.append(result['FPR'])
+
+            all_metrics.append([path + f"-THRESH-{thresh}", sum(MCD) / len(MCD), sum(FNR) / len(FNR), sum(FPR) / len(FPR)])
+
+    df = pd.DataFrame(all_metrics, columns=['Model', 'MCD', 'FNR', 'FPR'])
+    df.to_csv('HML_rates.csv')
 
 def main():
     # preds = load_predicions("./predictions2/Dron T02.61920488.20220117151609.csv")
@@ -130,50 +166,43 @@ def main():
     # preds = load_predictions2("./predictions/coordinates_1.csv")
     # labels = load_labels2("./labels/connected_1.csv")
 
-
     # New data
-    
 
-        # all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
+    # label_dir = "./labels/labels4_lab_12"
+    # predictions_dir = "./AirSim/lab_12"
 
-    # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
-    # df.to_csv('metrics_lab15.csv')
+    # models = [p for p in os.listdir(predictions_dir) if p.startswith('airSim') and not p.endswith('onnx')]
 
-    # Old data
-
-    # label_dir = "./labels3"
-    # predictions_dir = "./predictions3"
-
-    # labels_files = [l for l in os.listdir(label_dir) if l.endswith('.avi.csv')]
-    
     # all_metrics = []
+    # models = sorted(models)
 
-    # for path in os.listdir(predictions_dir):
-    #     files = os.listdir(os.path.join(predictions_dir, path))
+    # for model in [models[1]]:
+    #     print(model)
+    #     cams = sorted([p for p in os.listdir(os.path.join(predictions_dir, model)) if p.endswith('.csv')])
     #     mAPs = []
     #     FN_counts = []
     #     mean_distances = []
+    #     for i, cam in enumerate(cams):
+    #         print(cam)
+    #         labels = load_labels(os.path.join(label_dir, f'labelsCam{i+1}.csv'))
+    #         preds = load_predicions(os.path.join(predictions_dir, model, cam))
 
-    #     for l in labels_files:
-    #         pred_file = [f for f in files if f.split('.csv')[0] == l.split('.avi.csv')[0]][0]
-    #         print(os.path.join(label_dir, l), os.path.join(predictions_dir, path, pred_file))
-
-    #         preds = load_predicions(os.path.join(predictions_dir, path, pred_file))
-    #         labels = load_labels3(os.path.join(label_dir, l), 4)
-
-    #         result = metrics(preds, labels, mAP_start=0.1, mAP_stop=0.9, mAP_step=0.05)
-
+    #         result = metrics(preds, labels)
     #         mAPs.append(result['mAP'])
     #         FN_counts.append(result['FN_count'])
     #         mean_distances.append(result['mean_center_dist'])
-
-    #     all_metrics.append([path, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
+        
+    #     all_metrics.append([model, sum(mAPs) / len(mAPs), sum(FN_counts), sum(mean_distances) / len(mean_distances)])
 
     # df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'mean_center_distance'])
-    # df.to_csv('output.csv')
+    # df.to_csv('metrics_lab12.csv')
+    
+    # Old data
+
+    getHMLMetrics('./labels/labels3', './predictions/predictions3')
 
     # plot lab sequences
-    plotAirSimData('./AirSim/lab_12', './labels/labels4_lab_12')
+    # plotAirSimData('./AirSim/lab_12', './labels/labels4_lab_12')
 
     # labels = load_labels3("./labels/labels3/Dron T02.55260362.20220117151609.avi.csv", 3)
     # preds = load_predicions("./predictions/predictions3/best_640T0.2/Dron T02.55260362.20220117151609.csv")

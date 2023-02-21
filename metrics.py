@@ -206,8 +206,8 @@ def distBetweenCenters(predictions: np.ndarray, labels: np.ndarray, dist_thresh:
 
 def metrics(predictions: np.ndarray, 
             labels: np.ndarray, 
-            mAP_start: float = 0.5, 
-            mAP_stop: float = 0.95, 
+            mAP_start: float = 0.1, 
+            mAP_stop: float = 0.90, 
             mAP_step: float = 0.05, 
             main_iou_thresh: float = 0.5,
             dist_thresh: int = 15,
@@ -438,14 +438,44 @@ def plotFNRate(predictions: np.ndarray, labels: np.ndarray, start: float = 3, st
     # plt.title(f'Prediction count: {len(predictions)}')
     plt.show()
 
-# Obliczyć predykcje dla nowych danych (Kontaktowac sie z Wojciechem). 
- 
-# /WalkiDronowWizja/WLocher/Datasets/nagrania
+def calculateRates(predictions: np.ndarray, labels: np.ndarray, thresh: int):
+    """! Calculates rates (mean center distance, false positive rate, false nagative rate) for given threshold.
+    @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
+    @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
+    @param thresh Threshold used in matching process
+    @return map of {"MCD", "FNR", "FPR"}.
+    """
 
-# Wojciech lindenheim
-# 250 klatek wywalic
+    map = {}
 
-# /WalkiDronowWizja/WLocher/Datasets/nagrania hmlkatalog "test_video" zawiera 50s nagrania do wyznaczenia metryk
+    # First get FN rate
+    dists = []
+
+    # For label, find prediction bbox with highest iou and check if it is greater than iou thresh
+    for label in labels:
+        # Get preds from the same frame
+        preds = [p for p in predictions if p[0] == label[0]]
+
+        best_dist = 1e+8
+
+        for j, pred in enumerate(preds):
+            dist = calculateCenterDist(pred,label)
+
+            if dist < best_dist:
+                best_dist = dist
+
+        if best_dist != 1e+8: dists.append(best_dist) # Not sure what to do here
+
+    valid_dists = [d for d in dists if d < thresh]
+    map['FNR'] = ((len(labels) - len(valid_dists)) / len(labels))
+
+    # Now calcualte FPR
+    dists = getCenterDistances(predictions, labels)
+    valid_dists = [d for d in dists if d < thresh]
+    map['FPR'] = ((len(predictions) - len(valid_dists)) / len(labels))
+    map['MCD'] = (sum(valid_dists) / len(valid_dists))
+
+    return map
 
 def visualizeDataset(predictions: np.ndarray, labels: np.ndarray, video: str = "", start: int = 0, step: int = 10, n: int = 10):
     """! Visualizes dataset using openCV
