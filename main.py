@@ -182,7 +182,7 @@ def getHMLMetrics(label_dir, predictions_dir):
 
             labels = load_labels3(os.path.join(label_dir, l), 4)
 
-            result = metrics(preds, labels, 0.5, 0.95)
+            result = metrics(preds, labels)
             MAP.append(result['mAP'])
             FNC.append(result['FN_count'])
             MCD.append(result['mean_center_dist'])
@@ -224,7 +224,7 @@ def getAirSimRates(prediction_path: str, label_path: str):
     df.to_csv('AirSim_rates.csv')
 
 def main():
-    getHMLMetrics('./labels/labels3', './predictions/predictions4')
+    getHMLRates('./labels/labels3', './predictions/predictions4')
     # getAirSimRates('./AirSim/lab_12', './labels/labels4_lab_12')
 
     # plot lab sequences
