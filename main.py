@@ -193,14 +193,14 @@ def getHMLMetrics(label_dir, predictions_dir):
     df.to_csv('HML_rates.csv')
 
 def getAirSimRates(prediction_path: str, label_path: str):
-    models = [p for p in os.listdir(prediction_path) if p.startswith('airSim') and not p.endswith('onnx')]
+    models = [p for p in os.listdir(prediction_path) if p.startswith('YOLOv8') and not p.endswith('onnx')]
 
     all_metrics = []
 
     models = sorted(models)
 
     for thresh in [10, 20, 30]:
-        for model in [models[1]]:
+        for model in models:
             MCD = []
             FNR = []
             FPR = []
@@ -211,7 +211,7 @@ def getAirSimRates(prediction_path: str, label_path: str):
             for i, cam in enumerate(cams):
                 print(cam)
                 labels = load_labels(os.path.join(label_path, f'labelsCam{i+1}.csv'))
-                preds = load_predicions(os.path.join(prediction_path, model, cam))
+                preds = load_predictions2(os.path.join(prediction_path, model, cam))
 
                 result = calculateRates(preds, labels, thresh)
                 MCD.append(result['MCD'])
@@ -223,9 +223,39 @@ def getAirSimRates(prediction_path: str, label_path: str):
     df = pd.DataFrame(all_metrics, columns=['Model', 'MCD', 'FNR', 'FPR'])
     df.to_csv('AirSim_rates.csv')
 
+def getAirSimMetrics(prediction_path: str, label_path: str):
+    models = [p for p in os.listdir(prediction_path) if p.startswith('YOLOv8') and not p.endswith('onnx')]
+
+    all_metrics = []
+
+    models = sorted(models)
+
+    for model in models:
+        MAP = []
+        FNC = []
+        MCD = []
+
+        print(model)
+        cams = sorted([p for p in os.listdir(os.path.join(prediction_path, model)) if p.endswith('.csv')])
+
+        for i, cam in enumerate(cams):
+            print(cam)
+            labels = load_labels(os.path.join(label_path, f'labelsCam{i+1}.csv'))
+            preds = load_predictions2(os.path.join(prediction_path, model, cam))
+
+            result = metrics(preds, labels, 0.5, 0.95)
+            MAP.append(result['mAP'])
+            FNC.append(result['FN_count'])
+            MCD.append(result['mean_center_dist'])
+
+        all_metrics.append([model, sum(MAP) / len(MAP), sum(FNC) / len(FNC), sum(MCD) / len(MCD)])
+
+    df = pd.DataFrame(all_metrics, columns=['Model', 'mAP', 'FN_count', 'MCD'])
+    df.to_csv('AirSim_metrics.csv')
+
 def main():
-    getHMLRates('./labels/labels3', './predictions/predictions4')
-    # getAirSimRates('./AirSim/lab_12', './labels/labels4_lab_12')
+    # getHMLRates('./labels/labels3', './predictions/predictions4')
+    getAirSimMetrics('./AirSim/lab_12', './labels/labels4_lab_12')
 
     # plot lab sequences
     # plotAirSimData('./AirSim/lab_12', './labels/labels4_lab_12')
