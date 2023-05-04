@@ -72,7 +72,7 @@ def classifyDetected(predictions: np.ndarray, labels: np.ndarray, iou_thresh) ->
 
     return TP, FP
 
-def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: int=0.5, plot: bool=False) -> float:
+def averagePrecision(predictions: np.ndarray, labels: np.ndarray, iou_thresh: float=0.5, plot: bool=False) -> float:
     """! Calculates average precision for given IOU threshold.
     @param predictions Numpy array of detected bboxes. Bbox format: [frame_id, x1, y1, x2, y2, score]: ndarray
     @param labels Numpy array of ground truth bboxes. Bbox format: [frame_id, x1, y1, x2, y2]: ndarray
